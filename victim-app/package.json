@@ -1,0 +1,8 @@
+{
+  "name": "victim-app",
+  "version": "1.0.0",
+  "description": "Innocent application that depends on plain-crypto-js (like axios did)",
+  "dependencies": {
+    "plain-crypto-js": "file:../fake-package"
+  }
+}

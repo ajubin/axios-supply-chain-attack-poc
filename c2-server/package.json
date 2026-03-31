@@ -1,0 +1,9 @@
+{
+  "name": "c2-server",
+  "version": "1.0.0",
+  "description": "C2 server for educational supply chain attack demo",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
