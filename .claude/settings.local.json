@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo:*)",
+      "Bash(pkill -f \"node.*rat.js\")",
+      "Bash(pkill -f \"node.*server.js\")",
+      "Bash(pkill -f \"com.apple.act.mond\")",
+      "Bash(rm -f /tmp/com.apple.act.mond.js /tmp/ld.js)",
+      "Bash(rm -rf victim-app/node_modules)",
+      "Bash(rm -f /tmp/com.apple.act.mond.js)",
+      "Bash(git push:*)"
+    ]
+  }
+}

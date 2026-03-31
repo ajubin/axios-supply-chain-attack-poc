@@ -178,6 +178,18 @@
     function renderVictims(victims) {
       const container = document.getElementById("victims");
 
+      // Save focus state before re-render
+      const focused = document.activeElement;
+      const focusedId = focused ? focused.id : null;
+      const focusedValue = focused ? focused.value : "";
+      const focusedSelStart = focused && focused.selectionStart != null ? focused.selectionStart : null;
+
+      // Save all input/select values before re-render
+      const savedValues = {};
+      container.querySelectorAll("input, select").forEach((el) => {
+        if (el.id) savedValues[el.id] = el.value;
+      });
+
       if (victims.length === 0) {
         container.innerHTML = `
           <div class="no-victims">
@@ -236,6 +248,24 @@
           <div class="results">${resultsHtml || '<div style="color:#333;font-size:12px">No results yet</div>'}</div>
         </div>`;
       }).join("");
+
+      // Restore all input/select values
+      for (const [id, val] of Object.entries(savedValues)) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      }
+
+      // Restore focus after re-render
+      if (focusedId) {
+        const el = document.getElementById(focusedId);
+        if (el) {
+          el.value = focusedValue;
+          el.focus();
+          if (focusedSelStart != null && el.setSelectionRange) {
+            el.setSelectionRange(focusedSelStart, focusedSelStart);
+          }
+        }
+      }
     }
 
     function escapeHtml(str) {
