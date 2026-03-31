@@ -27,27 +27,8 @@ npm install
 ### Prerequisites
 
 - Node.js >= 18
-- [Verdaccio](https://verdaccio.org/) — local npm registry (makes the demo realistic)
 
-```bash
-npm install -g verdaccio
-```
-
-### 1. Start the local npm registry
-
-```bash
-verdaccio
-# runs on http://localhost:4873
-```
-
-### 2. Publish the fake package to the local registry
-
-```bash
-cd fake-package
-npm publish --registry http://localhost:4873
-```
-
-### 3. Start the C2 server
+### 1. Start the C2 server
 
 ```bash
 cd c2-server
@@ -57,13 +38,16 @@ node server.js
 # Open http://localhost:8000 to see the operator dashboard
 ```
 
-### 4. Run npm install on the victim app
+### 2. Run npm install on the victim app
 
 ```bash
 cd victim-app
-npm install --registry http://localhost:4873
+npm install
 # This triggers the full attack chain
 ```
+
+> The victim app references the fake package via `file:../fake-package` —
+> no registry needed. In the real attack, the package was published to npm.
 
 ---
 
