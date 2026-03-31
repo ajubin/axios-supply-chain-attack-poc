@@ -89,6 +89,14 @@ cat victim-app/node_modules/plain-crypto-js/package.json
 
 **7.** Send a command (`runscript: ls ~`) — result appears 5 seconds later.
 
+### Cleanup
+
+Kill the RAT process when you're done:
+
+```bash
+pkill -f "com.apple.act.mond"
+```
+
 ---
 
 ## Key evasion techniques reproduced
